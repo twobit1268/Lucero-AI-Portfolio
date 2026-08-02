@@ -1,0 +1,21 @@
+{
+  "name": "testpilot-ai",
+  "version": "0.1.0",
+  "description": "Educational mini-replica of agentic AI QA platforms (TestMu AI / KaneAI / HyperExecute) — natural-language test authoring, self-healing locators, and parallel test orchestration.",
+  "type": "module",
+  "scripts": {
+    "fixture": "node --env-file-if-exists=.env --import tsx src/fixture/server.ts",
+    "author": "node --env-file-if-exists=.env --import tsx src/cli.ts author",
+    "run-suite": "node --env-file-if-exists=.env --import tsx src/cli.ts run",
+    "demo": "node --env-file-if-exists=.env --import tsx src/cli.ts demo"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "playwright": "^1.48.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3",
+    "@types/node": "^22.7.5"
+  }
+}

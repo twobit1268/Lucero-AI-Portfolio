@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+generated-tests/*.spec.ts
+reports/*.jsonl
+reports/*.html
+!generated-tests/.gitkeep
+!reports/.gitkeep
