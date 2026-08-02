@@ -19,6 +19,9 @@ case study, this project builds a minimal version of each core capability
 against a real (if tiny) local app, so the underlying mechanics — not just
 the marketing terms — are something I can speak to and show.
 
+See [HOW_IT_WORKS.md](./HOW_IT_WORKS.md) for a step-by-step walkthrough of
+the full pipeline, tied to the actual code.
+
 ## Architecture
 
 ```
