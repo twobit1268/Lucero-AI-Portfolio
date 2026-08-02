@@ -1,10 +1,8 @@
 import { chromium } from "playwright";
-import Anthropic from "@anthropic-ai/sdk";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { snapshotAccessibleElements } from "../shared/domSnapshot.js";
-
-const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5";
+import { complete, extractCode } from "../shared/llmClient.js";
 
 /**
  * KaneAI-style natural-language test authoring.
@@ -36,7 +34,6 @@ export async function authorTest(spec: string, targetUrl: string): Promise<strin
   const domSnapshot = await snapshotAccessibleElements(page);
   await browser.close();
 
-  const client = new Anthropic();
   const prompt = `You are generating a test module for a mini test-authoring agent.
 
 Target URL: ${targetUrl}
@@ -66,14 +63,14 @@ Rules:
 - Include at least one node:assert assertion that directly verifies the spec's expected outcome (e.g. assert.strictEqual(await page.locator("#welcome-message").isVisible(), true)).
 - Do not wrap the function body in try/catch — let assertion/locator errors propagate so the orchestrator can catch and report them.`;
 
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 1024,
-    messages: [{ role: "user", content: prompt }],
-  });
+  const raw = await complete(prompt, 1024);
+  const generated = extractCode(raw);
 
-  const block = response.content[0];
-  const code = block.type === "text" ? block.text : "";
+  // The target URL is appended programmatically rather than trusted to the
+  // model's own goto() call — a typo'd or omitted navigation would otherwise
+  // be a silent failure mode independent of provider quality (this is what
+  // actually broke the first version of this demo).
+  const code = `${generated}\n\nexport const targetUrl = ${JSON.stringify(targetUrl)};\n`;
 
   const outDir = path.resolve(import.meta.dirname, "../../generated-tests");
   await mkdir(outDir, { recursive: true });

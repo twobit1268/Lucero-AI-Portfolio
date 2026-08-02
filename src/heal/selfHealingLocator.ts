@@ -1,10 +1,9 @@
 import type { Locator, Page } from "playwright";
-import Anthropic from "@anthropic-ai/sdk";
 import { appendFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { snapshotAccessibleElements } from "../shared/domSnapshot.js";
+import { complete, extractJson } from "../shared/llmClient.js";
 
-const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5";
 const LOG_PATH = path.resolve(import.meta.dirname, "../../reports/heal-log.jsonl");
 
 export interface HealOptions {
@@ -50,7 +49,6 @@ async function askForAlternateSelector(
   failedDescription: string
 ): Promise<HealSuggestion> {
   const domSnapshot = await snapshotAccessibleElements(page);
-  const client = new Anthropic();
 
   const prompt = `A Playwright locator no longer matches any element after a UI change.
 
@@ -67,15 +65,8 @@ Find the element that best matches the original intent in the CURRENT snapshot a
 
 Prefer "role" first, then "text", and only use "css" as a last resort.`;
 
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 300,
-    messages: [{ role: "user", content: prompt }],
-  });
-
-  const block = response.content[0];
-  const text = block.type === "text" ? block.text : "{}";
-  return JSON.parse(text) as HealSuggestion;
+  const raw = await complete(prompt, 300);
+  return extractJson<HealSuggestion>(raw);
 }
 
 function buildLocator(page: Page, suggestion: HealSuggestion): Locator {

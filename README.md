@@ -52,9 +52,14 @@ src/
 ## What's real here vs. simplified
 
 - **Real**: Playwright drives an actual Chromium browser against an actual
-  local app. The AI calls are real Claude API calls, not mocked/scripted
+  local app. The AI calls are real LLM calls (Ollama running Qwen2.5:7b
+  locally by default, or Claude if configured) — not mocked/scripted
   responses. Test authoring, self-healing, and parallel orchestration are
-  genuinely implemented, not stubbed.
+  genuinely implemented, not stubbed. Verified end-to-end: the demo's
+  simulated UI refactor (button id, class, *and* label all change) genuinely
+  breaks the original locator, and the self-healing step genuinely recovers
+  by re-querying the model with a fresh DOM snapshot — this isn't a scripted
+  "always succeeds" demo.
 - **Simplified on purpose**: HyperExecute's actual product involves real
   distributed worker infrastructure across a device/browser grid — this repo
   simulates that with a local concurrency-limited worker pool, since a single
@@ -65,9 +70,22 @@ src/
 
 ## Setup
 
+Uses [Ollama](https://ollama.com) (free, fully local, open-weight models) by
+default — no signup, no cost, no API key. Claude is used automatically
+instead if `ANTHROPIC_API_KEY` is set (higher-quality reasoning, especially
+for the self-healing JSON output), or force either explicitly with
+`LLM_PROVIDER=ollama|anthropic`.
+
 ```bash
 npm install
 npx playwright install chromium
+
+# Free/local path (default):
+brew install ollama
+brew services start ollama
+ollama pull qwen2.5:7b
+
+# Optional: use Claude instead
 cp .env.example .env   # then fill in ANTHROPIC_API_KEY
 ```
 

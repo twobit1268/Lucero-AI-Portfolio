@@ -12,7 +12,10 @@ export interface TestResult {
   rootCause?: string;
 }
 
-type TestModule = { default: (page: import("playwright").Page) => Promise<void> };
+type TestModule = {
+  default: (page: import("playwright").Page) => Promise<void>;
+  targetUrl?: string;
+};
 
 /** Run a bounded number of async jobs concurrently — a scaled-down stand-in
  * for HyperExecute's parallel-worker orchestration (real distributed grid
@@ -44,7 +47,13 @@ async function runOneTest(filePath: string): Promise<TestResult> {
 
   try {
     const page = await browser.newPage();
-    const mod = (await import(pathToFileURL(filePath).href)) as TestModule;
+    // Cache-bust the dynamic import — Node's module cache would otherwise
+    // silently serve a stale version if the same file path is re-run within
+    // one process (as the demo's v1 -> v2 re-run does).
+    const mod = (await import(
+      `${pathToFileURL(filePath).href}?t=${Date.now()}`
+    )) as TestModule;
+    if (mod.targetUrl) await page.goto(mod.targetUrl);
     await mod.default(page);
     return { name, status: "passed", durationMs: Date.now() - start };
   } catch (err) {
